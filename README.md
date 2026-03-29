@@ -1,4 +1,6 @@
-# Docker/Kubernetes Learning Environment
+# docker-kubernetes-network
+
+Based on [Docker&Kubernetesネットワークのしくみ](https://gihyo.jp/book/2025/978-4-297-14899-7).
 
 ## Setup
 
