@@ -8,7 +8,6 @@ _: {
         deadnix.enable = true;
         actionlint.enable = true;
         tflint.enable = true;
-        terraform-validate.enable = true;
         terraform-docs = {
           enable = true;
           entry = "${pkgs.terraform-docs}/bin/terraform-docs markdown table --output-file README.md --output-mode inject .";
