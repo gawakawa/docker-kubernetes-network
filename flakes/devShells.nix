@@ -6,7 +6,10 @@ _: {
         config.pre-commit.settings.enabledPackages
         ++ (with pkgs; [
           awscli2
+          docker-client
           opentofu
+          python3
+          tcpdump
           terraform-docs
         ]);
     in

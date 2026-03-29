@@ -18,7 +18,7 @@ chmod 600 ~/.ssh/learning-key.pem
 
 ### Local
 
-TODO
+None.
 
 ### EC2
 
