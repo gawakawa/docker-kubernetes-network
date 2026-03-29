@@ -17,7 +17,7 @@ terraform {
   }
 
   backend "s3" {
-    bucket = "REPLACE_WITH_BUCKET_NAME"
+    bucket = "learning-tfstate-93927776"
     key    = "terraform.tfstate"
     region = "ap-northeast-1"
   }
@@ -141,6 +141,35 @@ resource "aws_instance" "host" {
     volume_size = 8
     volume_type = "gp3"
   }
+
+  user_data = <<-EOF
+#cloud-config
+package_update: true
+packages:
+  - ca-certificates
+  - curl
+  - python3
+  - tcpdump
+write_files:
+  - path: /etc/apt/keyrings/docker.asc
+    defer: true
+  - path: /etc/apt/sources.list.d/docker.sources
+    content: |
+      Types: deb
+      URIs: https://download.docker.com/linux/ubuntu
+      Suites: noble
+      Components: stable
+      Architectures: amd64
+      Signed-By: /etc/apt/keyrings/docker.asc
+runcmd:
+  - curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
+  - chmod a+r /etc/apt/keyrings/docker.asc
+  - apt-get update
+  - apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+  - systemctl enable docker
+  - gpasswd -a ubuntu docker
+  - systemctl restart docker
+  EOF
 
   tags = {
     Name = "host${count.index + 1}"

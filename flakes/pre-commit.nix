@@ -10,7 +10,7 @@ _: {
         tflint.enable = true;
         terraform-docs = {
           enable = true;
-          entry = "${pkgs.terraform-docs}/bin/terraform-docs markdown table --output-file README.md --output-mode inject .";
+          entry = "${pkgs.bash}/bin/bash -c 'cd terraform && ${pkgs.terraform-docs}/bin/terraform-docs markdown table --output-file README.md --output-mode inject .'";
           files = "\\.tf$";
           pass_filenames = false;
         };
