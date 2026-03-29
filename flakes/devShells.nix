@@ -5,7 +5,9 @@ _: {
       devPackages =
         config.pre-commit.settings.enabledPackages
         ++ (with pkgs; [
+          awscli2
           opentofu
+          terraform-docs
         ]);
     in
     {
