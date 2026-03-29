@@ -19,6 +19,7 @@ _: {
 
         shellHook = ''
           ${config.pre-commit.shellHook}
+          export PATH="$PWD/scripts:$PATH"
         '';
       };
     };

@@ -4,6 +4,10 @@ _: {
     {
       pre-commit.settings.hooks = {
         treefmt.enable = true;
+        shellcheck = {
+          enable = true;
+          excludes = [ "^\\.envrc$" ];
+        };
         statix.enable = true;
         deadnix.enable = true;
         actionlint.enable = true;

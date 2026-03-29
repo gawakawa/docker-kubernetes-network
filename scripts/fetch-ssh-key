@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+aws ssm get-parameter --name "/ec2/learning-key" --with-decryption \
+  --query "Parameter.Value" --output text >~/.ssh/learning-key.pem
+chmod 600 ~/.ssh/learning-key.pem
+echo "Saved to ~/.ssh/learning-key.pem"

@@ -13,6 +13,7 @@ _: {
           enable = true;
           includes = [ "*.nix" ];
         };
+        shfmt.enable = true;
       };
     };
   };
