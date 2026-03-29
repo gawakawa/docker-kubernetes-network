@@ -23,7 +23,9 @@ None.
 ### EC2
 
 ```bash
-ssh -i ~/.ssh/learning-key.pem ubuntu@<IP>
-```
+# host1
+eval "$(tofu -chdir=terraform output -json ssh_commands | jq -r '.host1')"
 
-Get IP: `cd terraform && tofu output instance_public_ips`
+# host2
+eval "$(tofu -chdir=terraform output -json ssh_commands | jq -r '.host2')"
+```
