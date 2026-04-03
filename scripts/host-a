@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+SSH_KEY="${SSH_KEY:-$HOME/.ssh/learning-key.pem}"
+HOST_IP=$(tofu -chdir=terraform output -json instance_public_ips | jq -r '."host-a"')
+
+if [[ "$1" == "-d" ]]; then
+    CMD=$(cat)
+    ssh -o StrictHostKeyChecking=no -i "$SSH_KEY" "ubuntu@$HOST_IP" "nohup bash -c '$CMD' > /tmp/detached.out 2>&1 &"
+else
+    ssh -o StrictHostKeyChecking=no -i "$SSH_KEY" "ubuntu@$HOST_IP" bash
+fi
