@@ -28,6 +28,6 @@ None.
 ### EC2
 
 ```bash
-hst a -i
-hst b -i
+hst -i a
+hst -i b
 ```

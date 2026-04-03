@@ -35,7 +35,7 @@ EOF
 echo "ping -c 1 192.168.1.2" | hst a
 
 # ホスト A でホスト B からの通信をキャプチャする
-echo "sudo tcpdump -n host $HOST_B_IP" | hst a -d
+echo "sudo tcpdump -n host $HOST_B_IP" | hst -d a
 hst b <<EOF
 ping -c 1 $HOST_A_IP
 ping -c 1 192.168.1.1

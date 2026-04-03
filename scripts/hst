@@ -1,22 +1,72 @@
 #!/usr/bin/env bash
-HOST_NAME="${1:-}"
-if [[ ! "$HOST_NAME" =~ ^(a|b)$ ]]; then
-    echo "Usage: hst <a|b> [-i|-d]" >&2
-    exit 1
-fi
+set -euo pipefail
 
 SSH_KEY="${SSH_KEY:-$HOME/.ssh/learning-key.pem}"
-HOST_IP=$(tofu -chdir=terraform output -json instance_public_ips | jq -r ".\"host-$HOST_NAME\"")
+DETACH=0
+INTERACTIVE=0
 
-case "${2:-}" in
-    -i)
-        ssh -o StrictHostKeyChecking=no -i "$SSH_KEY" "ubuntu@$HOST_IP"
-        ;;
-    -d)
-        CMD=$(cat)
-        ssh -o StrictHostKeyChecking=no -i "$SSH_KEY" "ubuntu@$HOST_IP" "nohup bash -c '$CMD' > /tmp/detached.out 2>&1 &"
-        ;;
-    *)
-        ssh -o StrictHostKeyChecking=no -i "$SSH_KEY" "ubuntu@$HOST_IP" bash
-        ;;
-esac
+show_help() {
+    cat <<'HELP'
+Usage: hst [-d|-i|-h] <host> [COMMAND...]
+
+Connect to EC2 instances (host-a or host-b) via SSH.
+
+Arguments:
+  host       Host identifier: 'a' or 'b'
+  COMMAND    Command to execute (optional)
+
+Options:
+  -d         Run command detached (background with nohup)
+  -h         Show this help message
+  -i         Force interactive shell
+
+Examples:
+  hst a                  # Interactive shell on host-a
+  hst a hostname         # Run command on host-a
+  echo "cmd" | hst a     # Run from stdin
+  hst -d a sleep 60      # Run detached
+HELP
+}
+
+die() {
+    echo "hst: $1" >&2
+    exit 1
+}
+
+while getopts ":dhi" opt; do
+    case $opt in
+        d) DETACH=1 ;;
+        h) show_help; exit 0 ;;
+        i) INTERACTIVE=1 ;;
+        \?) die "Invalid option: -$OPTARG" ;;
+    esac
+done
+shift $((OPTIND - 1))
+
+HOST_NAME="${1:-}"
+[[ "$HOST_NAME" =~ ^[ab]$ ]] || die "Host must be 'a' or 'b'"
+shift
+
+HOST_IP=$(tofu -chdir=terraform output -json instance_public_ips | jq -r ".\"host-$HOST_NAME\"")
+[[ -n "$HOST_IP" && "$HOST_IP" != "null" ]] || die "No IP found for host-$HOST_NAME"
+
+SSH_OPTS=(-o StrictHostKeyChecking=no -i "$SSH_KEY")
+
+# Determine command: arguments > stdin > interactive
+if [[ $# -gt 0 ]]; then
+    CMD="$*"
+elif [[ ! -t 0 ]]; then
+    CMD=$(cat)
+else
+    INTERACTIVE=1
+fi
+
+if [[ $INTERACTIVE -eq 1 ]]; then
+    exec ssh "${SSH_OPTS[@]}" "ubuntu@$HOST_IP" -t
+elif [[ $DETACH -eq 1 ]]; then
+    # base64 encode and pass via stdin; read into var before backgrounding
+    printf '%s' "$CMD" | base64 -w0 | ssh "${SSH_OPTS[@]}" "ubuntu@$HOST_IP" \
+        'DATA=$(cat); nohup bash -c "$(echo "$DATA" | base64 -d)" > /tmp/detached.out 2>&1 &'
+else
+    printf '%s' "$CMD" | ssh "${SSH_OPTS[@]}" "ubuntu@$HOST_IP" bash
+fi
