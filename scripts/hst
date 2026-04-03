@@ -1,8 +1,14 @@
 #!/usr/bin/env bash
-SSH_KEY="${SSH_KEY:-$HOME/.ssh/learning-key.pem}"
-HOST_IP=$(tofu -chdir=terraform output -json instance_public_ips | jq -r '."host-b"')
+HOST_NAME="${1:-}"
+if [[ ! "$HOST_NAME" =~ ^(a|b)$ ]]; then
+    echo "Usage: hst <a|b> [-i|-d]" >&2
+    exit 1
+fi
 
-case "${1:-}" in
+SSH_KEY="${SSH_KEY:-$HOME/.ssh/learning-key.pem}"
+HOST_IP=$(tofu -chdir=terraform output -json instance_public_ips | jq -r ".\"host-$HOST_NAME\"")
+
+case "${2:-}" in
     -i)
         ssh -o StrictHostKeyChecking=no -i "$SSH_KEY" "ubuntu@$HOST_IP"
         ;;
