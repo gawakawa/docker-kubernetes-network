@@ -28,6 +28,6 @@ None.
 ### EC2
 
 ```bash
-ssh-ec2 host-a
-ssh-ec2 host-b
+host-a -i
+host-b -i
 ```
