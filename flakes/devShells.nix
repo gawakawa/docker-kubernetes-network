@@ -6,7 +6,7 @@ _: {
         config.pre-commit.settings.enabledPackages
         ++ (with pkgs; [
           awscli2
-          docker-client
+          bridge-utils
           opentofu
           python3
           tcpdump
