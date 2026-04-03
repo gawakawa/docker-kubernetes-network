@@ -127,6 +127,28 @@ resource "aws_security_group" "learning" {
   }
 }
 
+# Security Group for host-a (additional rules from host-b)
+resource "aws_security_group" "host_a" {
+  name        = "host-a-sg"
+  description = "Security group for host-a inter-host communication"
+  vpc_id      = data.aws_vpc.default.id
+
+  tags = {
+    Name = "host-a-sg"
+  }
+}
+
+# Security Group for host-b (additional rules from host-a)
+resource "aws_security_group" "host_b" {
+  name        = "host-b-sg"
+  description = "Security group for host-b inter-host communication"
+  vpc_id      = data.aws_vpc.default.id
+
+  tags = {
+    Name = "host-b-sg"
+  }
+}
+
 # EC2 Instances
 resource "aws_instance" "host" {
   count = 2
@@ -134,8 +156,11 @@ resource "aws_instance" "host" {
   ami           = data.aws_ami.ubuntu.id
   instance_type = "t2.micro"
 
-  key_name               = aws_key_pair.learning.key_name
-  vpc_security_group_ids = [aws_security_group.learning.id]
+  key_name = aws_key_pair.learning.key_name
+  vpc_security_group_ids = [
+    aws_security_group.learning.id,
+    count.index == 0 ? aws_security_group.host_a.id : aws_security_group.host_b.id
+  ]
 
   root_block_device {
     volume_size = 8
@@ -172,6 +197,52 @@ runcmd:
   EOF
 
   tags = {
-    Name = "host${count.index + 1}"
+    Name = "host-${element(["a", "b"], count.index)}"
   }
+}
+
+# Security Group Rules for inter-host communication (added after instances are created)
+
+# host-a SG: allow VXLAN from host-b
+resource "aws_security_group_rule" "host_a_vxlan_from_b" {
+  description       = "VXLAN from host-b"
+  type              = "ingress"
+  from_port         = 4789
+  to_port           = 4789
+  protocol          = "udp"
+  cidr_blocks       = ["${aws_instance.host[1].public_ip}/32"]
+  security_group_id = aws_security_group.host_a.id
+}
+
+# host-a SG: allow ICMP from host-b
+resource "aws_security_group_rule" "host_a_icmp_from_b" {
+  description       = "ICMP from host-b for ping"
+  type              = "ingress"
+  from_port         = -1
+  to_port           = -1
+  protocol          = "icmp"
+  cidr_blocks       = ["${aws_instance.host[1].public_ip}/32"]
+  security_group_id = aws_security_group.host_a.id
+}
+
+# host-b SG: allow VXLAN from host-a
+resource "aws_security_group_rule" "host_b_vxlan_from_a" {
+  description       = "VXLAN from host-a"
+  type              = "ingress"
+  from_port         = 4789
+  to_port           = 4789
+  protocol          = "udp"
+  cidr_blocks       = ["${aws_instance.host[0].public_ip}/32"]
+  security_group_id = aws_security_group.host_b.id
+}
+
+# host-b SG: allow ICMP from host-a
+resource "aws_security_group_rule" "host_b_icmp_from_a" {
+  description       = "ICMP from host-a for ping"
+  type              = "ingress"
+  from_port         = -1
+  to_port           = -1
+  protocol          = "icmp"
+  cidr_blocks       = ["${aws_instance.host[0].public_ip}/32"]
+  security_group_id = aws_security_group.host_b.id
 }

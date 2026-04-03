@@ -2,7 +2,7 @@ output "instance_public_ips" {
   description = "Public IP addresses of the EC2 instances"
   value = {
     for idx, instance in aws_instance.host :
-    "host${idx + 1}" => instance.public_ip
+    "host-${element(["a", "b"], idx)}" => instance.public_ip
   }
 }
 
@@ -24,6 +24,6 @@ output "ssh_commands" {
   description = "SSH connection commands"
   value = {
     for idx, instance in aws_instance.host :
-    "host${idx + 1}" => "ssh -i ~/.ssh/learning-key.pem ubuntu@${instance.public_ip}"
+    "host-${element(["a", "b"], idx)}" => "ssh -i ~/.ssh/learning-key.pem ubuntu@${instance.public_ip}"
   }
 }
