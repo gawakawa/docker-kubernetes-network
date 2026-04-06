@@ -279,7 +279,7 @@ resource "aws_scheduler_schedule" "stop_ec2" {
   group_name = "default"
 
   schedule_expression          = "cron(0 21 * * ? *)" # 6:00 JST = 21:00 UTC (previous day)
-  schedule_expression_timezone = "Asia/Tokyo"
+  schedule_expression_timezone = "UTC"
 
   flexible_time_window {
     mode = "OFF"
