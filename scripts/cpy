@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+HOST="${1:-}"
+[[ "$HOST" =~ ^[ab]$ ]] || { echo "Usage: scp <a|b> <files...>" >&2; exit 1; }
+shift
+
+IP=$(tofu -chdir="$(dirname "$0")/../terraform" output -json instance_public_ips | jq -r ".\"host-$HOST\"")
+scp -o StrictHostKeyChecking=no -i ~/.ssh/learning-key.pem "$@" "ubuntu@$IP:~/"
