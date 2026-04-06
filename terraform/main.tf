@@ -246,3 +246,50 @@ resource "aws_security_group_rule" "host_b_icmp_from_a" {
   cidr_blocks       = ["${aws_instance.host[0].public_ip}/32"]
   security_group_id = aws_security_group.host_b.id
 }
+
+# IAM Role for EventBridge Scheduler to stop EC2 instances
+resource "aws_iam_role" "eventbridge_ssm" {
+  name = "eventbridge-ssm-role"
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Action    = "sts:AssumeRole"
+      Effect    = "Allow"
+      Principal = { Service = "scheduler.amazonaws.com" }
+    }]
+  })
+}
+
+resource "aws_iam_role_policy" "eventbridge_ssm" {
+  name = "eventbridge-ssm-policy"
+  role = aws_iam_role.eventbridge_ssm.id
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect   = "Allow"
+      Action   = ["ec2:StopInstances"]
+      Resource = aws_instance.host[*].arn
+    }]
+  })
+}
+
+# EventBridge Scheduler to stop EC2 instances daily at 6:00 JST
+resource "aws_scheduler_schedule" "stop_ec2" {
+  name       = "stop-ec2-daily"
+  group_name = "default"
+
+  schedule_expression          = "cron(0 21 * * ? *)" # 6:00 JST = 21:00 UTC (previous day)
+  schedule_expression_timezone = "Asia/Tokyo"
+
+  flexible_time_window {
+    mode = "OFF"
+  }
+
+  target {
+    arn      = "arn:aws:scheduler:::aws-sdk:ec2:stopInstances"
+    role_arn = aws_iam_role.eventbridge_ssm.arn
+    input = jsonencode({
+      InstanceIds = aws_instance.host[*].id
+    })
+  }
+}
